@@ -77,5 +77,3 @@ if __name__ == '__main__':
     test_data = TusimpleDataset('test')
     print(len(train_data))
     print(test_data[0])
-
-

@@ -17,7 +17,7 @@ import numpy as np
 from torch.autograd import Variable
 from hourglass_network import lane_detection_network
 
-from gru_vp import GRU
+from gru_cnn_vp import GRU_CNN
 from torch.autograd import Function as F
 from parameters import Parameters
 import math
@@ -39,8 +39,7 @@ class RMSELoss(nn.Module):
     def forward(self, x, y):
         eps = 1e-8
         criterion = nn.MSELoss()
-        loss = torch.sqrt(criterion(x, y) + eps) # clone 붙이면 괜찮? backward직전 criterion부분뒤에 .clone()붙이기
-        #one of the variables needed for gradient computation has been modified by an inplace operation: [torch.cuda.FloatTensor []], which is output 0 of SqrtBackward, is at version 1; expected version 0 instead.
+        loss = torch.sqrt(criterion(x, y) + eps)
         return loss
 
 class Agent(nn.Module):
@@ -218,9 +217,7 @@ class Agent(nn.Module):
             # print(vp_gt_used)
             # print('---------------------------------------------------------------------')
 
-            gru_loss = self.criterion_gru(pred_vp, vp_gt_used).clone() 
-            #  .clone >>> 에러 해결
-            # one of the variables needed for gradient computation has been modified by an inplace operation
+            gru_loss = self.criterion_gru(pred_vp, vp_gt_used).clone()
             if p.batch_size/3 > len(vp_gt_used):
                 gru_loss *= 1.5
             elif p.batch_size*2/3 > len(vp_gt_used):
@@ -416,9 +413,9 @@ class Agent(nn.Module):
                 # cs_intrp2 = interp1d(xs, ys, kind='quadratic')
                 # cs_intrp = CubicSpline(xs, ys)
             except: 
-                # print('cubic spline error') 
-                # print('xs:', xs)
-                # print('ys:', ys)
+                print('cubic spline error') 
+                print('xs:', xs)
+                print('ys:', ys)
                 return None
             # x_intrp = np.linspace(int(xs.min()), int(xs.max()), int(xs.max())-int(xs.min())+1)
             x_intrp = np.linspace(int(xs.min()), int(xs.max()), 40)

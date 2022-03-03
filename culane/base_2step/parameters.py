@@ -46,8 +46,8 @@ class Parameters():
     intensity_ratio=0.6
     shadow_ratio=0.6
     
-    train_root_url = "./data/"
-    test_root_url="./data/"
+    train_root_url = "../data/"
+    test_root_url="../data/"
 
     # test parameter
     color = [(0,0,0), (255,0,0), (0,255,0),(0,0,255),(255,255,0),(255,0,255),(0,255,255),(255,255,255),(100,255,0),(100,0,255),(255,100,0),(0,100,255),(255,0,100),(0,255,100)]

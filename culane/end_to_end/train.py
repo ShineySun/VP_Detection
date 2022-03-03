@@ -59,7 +59,7 @@ def Training():
     else:
         lane_agent = agent.Agent()
         # lane_agent.load_weights_default(296, "tensor(1.6947)")
-        lane_agent.load_weights(107, "tensor(1.6058)", "6.658214260824025e-05")
+        lane_agent.load_weights(61, "tensor(1.5568)", "0.00360430171713233")
 
     ##############################
     ## Check GPU

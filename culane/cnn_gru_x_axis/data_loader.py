@@ -40,69 +40,20 @@ class Generator(object):
     ################################################################################
     def __init__(self):
         self.p = Parameters()
+
+        # load training set
         self.train_data = []
-        self.val_data = []
-        self.test_data = []
-        self.train_vp = []
-        self.val_vp = []
-        self.test_vp = []
 
-        # # load training set
-        # with open("./data/list/train.txt") as f:
-        #     self.train_data = f.readlines()
+        with open("./data/list/train.txt") as f:
+            self.train_data = f.readlines()
 
-        # self.size_train = len(self.train_data)
-
-        # # load test set
-        # with open("./data/list/test.txt") as f:
-        #     self.test_data = f.readlines()
-
-        # self.size_test = len(self.test_data)
-
-
-        self.train_lst = []
-        with open('../data/culane_vp_gt/train_culane_curve_3d_hlimit_0.json', 'rb') as f:
-            data = json.load(f)
-            for i in data['data']:
-                if i['annotations']['num_lanes'] < 2: continue
-                # tmp = i['metadata']['img_info']
-                # tmp.update(i['annotations']['mean_vp'])
-                # tmp['num_lanes'] = i['annotations']['num_lanes']
-                # self.train_lst.append(tmp)
-                self.train_data.append(i['metadata']['img_info']['image_path'])
-                self.train_vp.append(i['annotations']['mean_vp'])
-        # print(len(self.train_lst))
         self.size_train = len(self.train_data)
-        print(self.size_train)
-        print(len(self.train_vp))
 
-        self.valid_lst = []
-        with open('../data/culane_vp_gt/val_culane_curve_1d_hlimit_0.json', 'rb') as f:
-            data = json.load(f)
-            for i in data['data']:
-                if i['annotations']['num_lanes'] < 2: continue
-                # tmp = i['metadata']['img_info']
-                # tmp.update(i['annotations']['mean_vp'])
-                # tmp['num_lanes'] = i['annotations']['num_lanes']
-                # self.test_lst.append(tmp)
-                self.val_data.append(i['metadata']['img_info']['image_path'])
-                self.val_vp.append(i['annotations']['mean_vp'])
-        # print(len(self.test_lst)
-        self.size_val = len(self.val_data)
+        # load test set
+        self.test_data = []
+        with open("./data/list/test.txt") as f:
+            self.test_data = f.readlines()
 
-        self.test_lst = []
-        with open('../data/culane_vp_gt/test_culane_curve_1d_hlimit_0.json', 'rb') as f:
-            data = json.load(f)
-            for i in data['data']:
-                if i['annotations']['num_lanes'] < 2: continue
-                # tmp = i['metadata']['img_info']
-                # tmp.update(i['annotations']['mean_vp'])
-                # tmp['num_lanes'] = i['annotations']['num_lanes']
-                # self.test_lst.append(tmp)
-                self.test_data.append(i['metadata']['img_info']['image_path'])
-                # self.test_vp.append(list(i['annotations']['mean_vp'].values()))
-                self.test_vp.append(i['annotations']['mean_vp'])
-        # print(len(self.test_lst)
         self.size_test = len(self.test_data)
 
     #################################################################################################################
@@ -110,16 +61,13 @@ class Generator(object):
     #################################################################################################################
     def Generate(self, sampling_list = None): 
         cuts = [(b, min(b + self.p.batch_size, self.size_train)) for b in range(0, self.size_train, self.p.batch_size)]
-        # random.shuffle(self.train_data)
-        # random.shuffle(self.train_data)
-        # random.shuffle(self.train_data)
+        random.shuffle(self.train_data)
+        random.shuffle(self.train_data)
+        random.shuffle(self.train_data)
         for start, end in cuts:
             # resize original image to 512*256
-            self.inputs, self.target_lanes, self.target_h, self.test_image, self.data_list, self.vp_gt = self.Resize_data(start, end, sampling_list)
-            # print("--------------------------------------")
-            # print(len(self.target_lanes[0]))
-            # print("+++++++++++++++++++++++++++++++++")
-            # print(len(self.target_h))
+            self.inputs, self.target_lanes, self.target_h, self.test_image, self.data_list = self.Resize_data(start, end, sampling_list)
+            
             self.actual_batchsize = self.inputs.shape[0]
             self.Flip()
             self.Translation()
@@ -128,103 +76,42 @@ class Generator(object):
             self.Change_intensity()
             self.Shadow()
 
-            yield self.inputs/255.0, self.target_lanes, self.target_h, self.test_image/255.0, self.data_list, self.vp_gt  # generate normalized image
+            yield self.inputs/255.0, self.target_lanes, self.target_h, self.test_image/255.0, self.data_list  # generate normalized image
 
     #################################################################################################################
     ## Generate test data
     #################################################################################################################
-    def Generate_Val(self): 
-        cuts = [(b, min(b + self.p.batch_size, self.size_val)) for b in range(0, self.size_val, self.p.batch_size)]
-        for start, end in cuts:
-            test_image, path, ratio_w, ratio_h, target_h, target_lanes, vp_gt = self.Resize_data_val(start, end)
-            yield test_image/255.0, ratio_w, ratio_h, path, target_h, target_lanes, vp_gt
-
-    def Generate_Test(self):
+    def Generate_Test(self): 
         cuts = [(b, min(b + self.p.batch_size, self.size_test)) for b in range(0, self.size_test, self.p.batch_size)]
         for start, end in cuts:
-            test_image, path, ratio_w, ratio_h, target_h, target_lanes, vp_gt = self.Resize_data_test(start, end)
-            yield test_image/255.0, ratio_w, ratio_h, path, target_h, target_lanes, vp_gt
+            test_image, path, ratio_w, ratio_h, target_h, target_lanes = self.Resize_data_test(start, end)
+            yield test_image/255.0, ratio_w, ratio_h, path, target_h, target_lanes
 
     #################################################################################################################
     ## resize original image to 512*256 and matching correspond points
     #################################################################################################################
 
-    def Resize_data_val(self, start, end):
-        inputs = []
-        path = []
-        target_lanes = []
-        target_h = []
-        vp = []
-
-        for i in range(start, end):
-        #     # vanishing point GT
-        #     try:
-        #         vp.append([self.val_vp[i]['x']*ratio_w, self.val_vp[i]['y']*ratio_h])
-        #     except:
-        #         print("vp.append([self.val_vp[i][x]*ratio_w, self.val_vp[i][y]*ratio_h]), KeyError: x")
-        #         continue 
-                
-            data = self.val_data[i]
-            temp_image = cv2.imread(self.p.test_root_url+data)
-            original_size_x = temp_image.shape[1]
-            original_size_y = temp_image.shape[0]
-            ratio_w = self.p.x_size*1.0/temp_image.shape[1]
-            ratio_h = self.p.y_size*1.0/temp_image.shape[0]
-            temp_image = cv2.resize(temp_image, (self.p.x_size,self.p.y_size))
-            inputs.append( np.rollaxis(temp_image, axis=2, start=0) )
-            path.append(data)
-
-            temp_lanes = []
-            temp_h = []
-
-            annoatation = self.p.test_root_url+data[0:-4]+".lines.txt"
-            with open(annoatation) as f:
-                annoatation_data = f.readlines()
-
-            for j in annoatation_data:
-                x = []
-                y = []
-                temp_x = j.split()[0::2]
-                temp_y = j.split()[1::2]
-
-                for k in range(len(temp_x)):
-                    x_value = float(temp_x[k])
-                    y_value = int(temp_y[k])
-                    if 0 < x_value < original_size_x and 0 < y_value < original_size_y:
-                        x.append( x_value )
-                        y.append( y_value )
-
-                temp_lanes.append( x )
-                temp_h.append( y )
-            target_lanes.append(np.array(temp_lanes))
-            target_h.append(np.array(temp_h))
-            vp.append([self.val_vp[i]['x']*ratio_w, self.val_vp[i]['y']*ratio_h])
-
-        return np.array(inputs), path, ratio_w, ratio_h, target_h, target_lanes, np.array(vp)
-    
     def Resize_data_test(self, start, end):
         inputs = []
         path = []
         target_lanes = []
         target_h = []
-        vp = []
 
         for i in range(start, end):
-                
             data = self.test_data[i]
-            temp_image = cv2.imread(self.p.test_root_url+data)
+            temp_image = cv2.imread(self.p.test_root_url+data[1:-1])
             original_size_x = temp_image.shape[1]
             original_size_y = temp_image.shape[0]
             ratio_w = self.p.x_size*1.0/temp_image.shape[1]
             ratio_h = self.p.y_size*1.0/temp_image.shape[0]
             temp_image = cv2.resize(temp_image, (self.p.x_size,self.p.y_size))
             inputs.append( np.rollaxis(temp_image, axis=2, start=0) )
-            path.append(data)
+            path.append(data[1:-1])
 
             temp_lanes = []
             temp_h = []
 
-            annoatation = self.p.test_root_url+data[0:-4]+".lines.txt"
+            annoatation = self.p.test_root_url[:-1]+data[0:-4]+"lines.txt"
             with open(annoatation) as f:
                 annoatation_data = f.readlines()
 
@@ -245,28 +132,17 @@ class Generator(object):
                 temp_h.append( y )
             target_lanes.append(np.array(temp_lanes))
             target_h.append(np.array(temp_h))
-            try:
-                vp.append([self.test_vp[i]['x']*ratio_w, self.test_vp[i]['y']*ratio_h])
-            except:
-                vp.append([250,120])
 
-        return np.array(inputs), path, ratio_w, ratio_h, target_h, target_lanes, np.array(vp)
+        return np.array(inputs), path, ratio_w, ratio_h, target_h, target_lanes
 
     def Resize_data(self, start, end, sampling_list):
         inputs = []
         target_lanes = []
         target_h = []
         data_list = []
-        vp = []
 
         # choose data from each number of lanes
         for i in range(start, end):
-            # # vanishing point GT
-            # try:
-            #     vp.append([self.train_vp[i]['x']*ratio_w, self.train_vp[i]['y']*ratio_h])
-            # except:
-            #     print("vp.append([self.train_vp[i][x]*ratio_w, self.train_vp[i][y]*ratio_h]), KeyError: x")
-            #     continue
 
             if sampling_list == None:
                 data = random.sample(self.train_data, 1)[0]
@@ -285,9 +161,9 @@ class Generator(object):
                     data_list.append(data)
 
             # train set image
-            temp_image = cv2.imread(self.p.train_root_url+data)
-            # if i==start:
-            #     print(data)
+            temp_image = cv2.imread(self.p.train_root_url+data[1:-1])
+            if i==start:
+                print(data[1:-1])
             original_size_x = temp_image.shape[1]
             original_size_y = temp_image.shape[0]
             ratio_w = self.p.x_size*1.0/temp_image.shape[1]
@@ -298,7 +174,7 @@ class Generator(object):
             temp_lanes = []
             temp_h = []
 
-            annoatation = self.p.train_root_url+data[0:-4]+".lines.txt"
+            annoatation = self.p.train_root_url+data[0:-4]+"lines.txt"
             with open(annoatation) as f:
                 annoatation_data = f.readlines()         
 
@@ -314,39 +190,19 @@ class Generator(object):
                     if 0 < x_value < original_size_x and 0 < y_value < original_size_y:
                         x.append( x_value )
                         y.append( y_value )
-                
+
                 l, h = self.make_dense_x(np.array(x), np.array(y))
-                # print(l.shape, h.shape)
-                # print("//////////////////////////////////////////////////////////")
-                # print(np.array(x).shape, np.array(x).shape)
-                # print(l)
                 temp_lanes.append( l*ratio_w )
-                # print(ratio_w)
-                # print(temp_lanes)
                 temp_h.append( h*ratio_h )
             target_lanes.append(np.array(temp_lanes))
             target_h.append(np.array(temp_h))
 
-            
-            # start: 1230 end: 1236 current: 1232 train_vp: {}
-            # 왜 배치 내 중간정보가 비었을까
-            # driver_23_30frame/05170735_0697.MP4/05060.jpg에 해당하는 정보만 없는것으로 추정됨
-            # 정 안되면 except에서  그냥 아무값이나 append해주기
-            try:
-                vp.append([self.train_vp[i]['x']*ratio_w, self.train_vp[i]['y']*ratio_h])
-            except:
-                # print(len(self.train_vp))
-                # print('start:',start,'end:',end, 'current:',i, 'train_vp:',self.train_vp[i])
-                # print(data)
-                vp.append([250,120])
-
         #test set image
         test_index = random.randrange(0, self.size_test-1)
-        test_image = cv2.imread(self.p.test_root_url+self.test_data[test_index])
+        test_image = cv2.imread(self.p.test_root_url+self.test_data[test_index][1:-1])
         test_image = cv2.resize(test_image, (self.p.x_size,self.p.y_size))
-
         
-        return np.array(inputs), target_lanes, target_h, np.rollaxis(test_image, axis=2, start=0), data_list, np.array(vp)
+        return np.array(inputs), target_lanes, target_h, np.rollaxis(test_image, axis=2, start=0), data_list
 
     def make_dense_x(self, l, h):
         out_x = []

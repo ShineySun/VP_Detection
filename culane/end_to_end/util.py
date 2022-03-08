@@ -90,6 +90,18 @@ def draw_points(x, y, image):
 
     return image
 
+def draw_points_vp(vp_pred, vp_gt, image):
+    x_pred = vp_pred[0]*p.x_size
+    x_gt = np.array(vp_gt)[0]*p.x_size
+    y_pred = vp_pred[1]*p.y_size
+    y_gt = np.array(vp_gt)[1]*p.y_size
+    image = cv2.circle(image, (int(x_pred), int(y_pred)), 5, (0,0,255), thickness=-1) # 빨강
+    image = cv2.circle(image, (int(x_gt), int(y_gt)), 5, (0,0,0), thickness=-1) #검정
+    # cv2.imshow('img', image)
+    # cv2.waitKey(0)
+
+    return image
+
 ###############################################################
 ##
 ## calculate

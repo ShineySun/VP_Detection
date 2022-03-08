@@ -37,7 +37,7 @@ class lane_detection_network(nn.Module):
         result4, out, feature4 = self.layer4(out)
         
         # vp detect
-        left, right, vp_gt_used = bridge(result4, vp_gt)
+        left, right, vp_gt_used, vp_batch_idx = bridge(result4, vp_gt)
         if left is not None:
             pred_vp = self.gru(left.cuda(), right.cuda())
         else:
@@ -45,5 +45,5 @@ class lane_detection_network(nn.Module):
 
 
 
-        return [result1, result2, result3, result4], [feature1, feature2, feature3, feature4], [pred_vp, vp_gt_used]
+        return [result1, result2, result3, result4], [feature1, feature2, feature3, feature4], [pred_vp, vp_gt_used, vp_batch_idx]
         #return [result2], [feature2]

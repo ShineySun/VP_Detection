@@ -21,6 +21,7 @@ from patsy import cr
 import csaps
 from scipy.interpolate import CubicSpline
 from scipy.interpolate import interp1d
+import pickle
 
 p = Parameters()
 
@@ -46,7 +47,7 @@ def Testing():
         lane_agent = agent.Agent()
     else:
         lane_agent = agent.Agent()
-        lane_agent.load_weights(107, "tensor(1.6058)", "6.658214260824025e-05")
+        lane_agent.load_weights(70, "tensor(0.7224)", "0.0037707341834902763")
 	
     ##############################
     ## Check GPU
@@ -99,9 +100,11 @@ def Testing():
 
     elif p.mode == 3: #evaluation
         test_loss = [0, 0, 0]
+        norm_dist = []
         print("evaluate")
-        evaluation_test(test_loss, loader, lane_agent)
+        evaluation_test(test_loss, norm_dist, loader, lane_agent)
         print(test_loss[0]/test_loss[2], test_loss[0]/test_loss[1])
+        save_norm_dist(norm_dist)
 
 
 ############################################################################
@@ -128,10 +131,11 @@ def evaluation(test_loss, loader, lane_agent, thresh = p.threshold_point, index=
         progressbar.update(1)
     progressbar.close()
 
-def evaluation_test(test_loss, loader, lane_agent, thresh = p.threshold_point, index= -1, name = None):
+def evaluation_test(test_loss, norm_dist, loader, lane_agent, thresh = p.threshold_point, index= -1, name = None):
     progressbar = tqdm(range(loader.size_test//p.batch_size))
+    count = 0
     for test_image, ratio_w, ratio_h, path, target_h, target_lanes, vp_gt in loader.Generate_Test():
-        x, y, _ = test(test_loss, vp_gt, lane_agent, test_image, thresh, index=index)
+        x, y, out_images = test(test_loss, norm_dist, vp_gt, lane_agent, test_image, thresh, index=index)
         x_ = []
         y_ = []
         for i, j in zip(x, y):
@@ -144,9 +148,12 @@ def evaluation_test(test_loss, loader, lane_agent, thresh = p.threshold_point, i
         #util.visualize_points_origin_size(x_[0], y_[0], test_image[0]*255, ratio_w, ratio_h)
         #print(target_lanes)
         #util.visualize_points_origin_size(target_lanes[0], target_h[0], test_image[0]*255, ratio_w, ratio_h)
+        if count % 500 == 0 and out_images != []:
+            cv2.imwrite('./output_img/result_'+str(count)+'.png', out_images[0])
 
         result_data = write_result(x_, y_, path)
         progressbar.update(1)
+        count += 1
     progressbar.close()
 
 ############################################################################
@@ -294,7 +301,7 @@ def save_result(result_data, fname):
 ############################################################################
 ## test on the input test image
 ############################################################################
-def test(test_loss, vp_gt, lane_agent, test_images, thresh = p.threshold_point, index= -1):
+def test(test_loss, norm_dist, vp_gt, lane_agent, test_images, thresh = p.threshold_point, index= -1):
 
     result, vp_info = lane_agent.predict_lanes_test(test_images, vp_gt)
     torch.cuda.synchronize()
@@ -338,11 +345,17 @@ def test(test_loss, vp_gt, lane_agent, test_images, thresh = p.threshold_point, 
         # sort points along y 
         in_x, in_y = util.sort_along_y(in_x, in_y)  
 
-        result_image = util.draw_points(in_x, in_y, deepcopy(image))
+        # vp detect까지 성공한 경우만 이미지 저장
+        if vp_info[2] is not None and i in vp_info[2]:  # vp detect에 사용한 batch라면
+            result_image = util.draw_points(in_x, in_y,  deepcopy(image))
+            idx = vp_info[2].index(i)
+            result_image = util.draw_points_vp(vp_info[0][idx].cpu().detach().numpy(), vp_info[1][idx].cpu().detach().numpy(), result_image)
+            out_images.append(result_image)
+            out_images.append(result_image)
+
 
         out_x.append(in_x)
         out_y.append(in_y)
-        out_images.append(result_image)
         
     if vp_info[0] is not None:
         vp_pred = vp_info[0].cpu().detach().numpy()
@@ -355,6 +368,9 @@ def test(test_loss, vp_gt, lane_agent, test_images, thresh = p.threshold_point, 
         test_loss[0] += np.sum(np.abs(x_pred-x_gt))
         test_loss[1] += np.sum(np.abs(y_pred-y_gt))
         test_loss[2] += len(vp_gt_used)
+        norm_dist_tmp = np.sqrt((x_pred-x_gt)**2 + (y_pred-y_gt)**2) / p.img_diag
+        norm_dist.extend(norm_dist_tmp.tolist())
+        
 
     return out_x, out_y,  out_images
 
@@ -481,6 +497,10 @@ def spline_lane(pt):
     else:
         # print("there is no lane valid")
         return None
+
+def save_norm_dist(norm_dist):
+    with open('./norm_dist/norm_dist.pkl','wb') as f:
+        pickle.dump(norm_dist,f)
 
 if __name__ == '__main__':
     Testing()

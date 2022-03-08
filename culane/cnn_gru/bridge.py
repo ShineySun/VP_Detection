@@ -22,6 +22,7 @@ def bridge(result, vp_gt):
     ego_right_pts = []
     vp_gt_used = []
     images = []
+    vp_batch_idx = []
 
     for i in range(p.batch_size):
         try: confidance[i]
@@ -50,15 +51,16 @@ def bridge(result, vp_gt):
             ego_left_pts.append(left_pt)
             ego_right_pts.append(right_pt)
             images.append(img.reshape(1, p.y_size, p.x_size))
+            vp_batch_idx.append(i)
         
 
     # if ego_left_pts != []:
     #         vp_gt_used = torch.from_numpy(np.array(vp_gt_used, dtype='float32')).cuda()
     #         pred_vp = gru(torch.from_numpy(np.array(ego_left_pts, dtype='float32')).cuda(), torch.from_numpy(np.array(ego_right_pts, dtype='float32')).cuda())
     if ego_left_pts != []:
-        return torch.from_numpy(np.array(ego_left_pts, dtype='float32')), torch.from_numpy(np.array(ego_right_pts, dtype='float32')), torch.from_numpy(np.array(vp_gt_used, dtype='float32')).cuda(), torch.from_numpy(np.array(images, dtype='float32')).cuda()
+        return torch.from_numpy(np.array(ego_left_pts, dtype='float32')), torch.from_numpy(np.array(ego_right_pts, dtype='float32')), torch.from_numpy(np.array(vp_gt_used, dtype='float32')).cuda(), vp_batch_idx, torch.from_numpy(np.array(images, dtype='float32')).cuda()
     else:
-        return None, None, None, None
+        return None, None, None, None, None
 
 
 

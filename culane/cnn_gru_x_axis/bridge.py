@@ -23,6 +23,7 @@ def bridge(result, vp_gt):
     ego_left_pts_x_axis = []
     ego_right_pts_x_axis = []
     vp_gt_used = []
+    vp_batch_idx = []
     images = []
 
     for i in range(p.batch_size):
@@ -45,8 +46,9 @@ def bridge(result, vp_gt):
 
         left_pt_y_axis = spline_lane_y(left_pt)
         right_pt_y_axis = spline_lane_y(right_pt)
-        left_pt_x_axis = spline_lane_x(left_pt)
-        right_pt_x_axis = spline_lane_x(right_pt)
+        left_pt_x_axis = spline_lane_x(left_pt, 'left')
+        right_pt_x_axis = spline_lane_x(right_pt, 'right')
+        
 
         if left_pt_y_axis is not None and right_pt_y_axis is not None and left_pt_x_axis is not None and right_pt_x_axis is not None:
             vp_gt_used.append([vp_gt[i][0]/p.x_size, vp_gt[i][1]/p.y_size])
@@ -55,11 +57,12 @@ def bridge(result, vp_gt):
             ego_left_pts_x_axis.append(left_pt_x_axis)
             ego_right_pts_x_axis.append(right_pt_x_axis)
             images.append(img.reshape(1, p.y_size, p.x_size))
+            vp_batch_idx.append(i)
         
     if ego_left_pts_y_axis != [] and ego_left_pts_x_axis != []:
-        return torch.from_numpy(np.array(ego_left_pts_y_axis, dtype='float32')), torch.from_numpy(np.array(ego_right_pts_y_axis, dtype='float32')), torch.from_numpy(np.array(ego_left_pts_x_axis, dtype='float32')), torch.from_numpy(np.array(ego_right_pts_x_axis, dtype='float32')), torch.from_numpy(np.array(vp_gt_used, dtype='float32')).cuda(), torch.from_numpy(np.array(images, dtype='float32')).cuda()
+        return torch.from_numpy(np.array(ego_left_pts_y_axis, dtype='float32')), torch.from_numpy(np.array(ego_right_pts_y_axis, dtype='float32')), torch.from_numpy(np.array(ego_left_pts_x_axis, dtype='float32')), torch.from_numpy(np.array(ego_right_pts_x_axis, dtype='float32')), torch.from_numpy(np.array(vp_gt_used, dtype='float32')).cuda(), vp_batch_idx, torch.from_numpy(np.array(images, dtype='float32')).cuda()
     else:
-        return None, None, None, None, None, None
+        return None, None, None, None, None, None, None
 
     
 
@@ -128,11 +131,10 @@ def spline_lane_x(pt, ego):
         if ego == 'left':
             x_intrp = -x_intrp
         # 이부분 제대로 확인하기
-
-        # x_intrp = x_intrp[::-1]
-        # y_intrp = y_intrp[::-1]
-        plt.scatter(x_intrp, y_intrp)
-        plt.show()
+        # plt.scatter(x_intrp, y_intrp)
+        # plt.show()
+        # print(x_intrp)
+        # print(y_intrp)
 
         x_intrp /= p.x_size
         y_intrp /= p.y_size

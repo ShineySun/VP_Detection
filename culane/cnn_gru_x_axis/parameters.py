@@ -4,16 +4,20 @@
 ##
 #############################################################################################################
 import numpy as np
+import math
 
 class Parameters():
     n_epoch = 1000
     l_rate = 0.001
     weight_decay=1e-5
-    save_path = "savefile/rmse/"
-    model_path = "savefile/rmse/" # 수정해주기!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    save_path = "savefile/"
+    model_path = "savefile/add_once/" # 수정해주기!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     batch_size = 6
     x_size = 512
     y_size = 256
+    img_diag = math.sqrt(x_size**2 + y_size**2)
+
+
     resize_ratio = 8
     grid_x = x_size//resize_ratio  #64
     grid_y = y_size//resize_ratio  #32

@@ -4,6 +4,7 @@
 ##
 #############################################################################################################
 import numpy as np
+import math
 
 class Parameters():
     n_epoch = 1000
@@ -14,6 +15,7 @@ class Parameters():
     batch_size = 6
     x_size = 512
     y_size = 256
+    img_diag = math.sqrt(x_size**2 + y_size**2)
     resize_ratio = 8
     grid_x = x_size//resize_ratio  #64
     grid_y = y_size//resize_ratio  #32

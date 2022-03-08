@@ -37,7 +37,7 @@ class lane_detection_network(nn.Module):
         result4, out, feature4 = self.layer4(out)
         
         # vp detect
-        left_y_axis, right_y_axis, left_x_axis, right_x_axis, vp_gt_used, img = bridge(result4, vp_gt)
+        left_y_axis, right_y_axis, left_x_axis, right_x_axis, vp_gt_used, vp_batch_idx, img = bridge(result4, vp_gt)
 
         if left_y_axis is not None and left_x_axis is not None:
             pred_vp = self.gru_cnn(left_y_axis.cuda(), right_y_axis.cuda(), left_x_axis.cuda(), right_x_axis.cuda(), img.cuda())
@@ -46,5 +46,5 @@ class lane_detection_network(nn.Module):
 
 
 
-        return [result1, result2, result3, result4], [feature1, feature2, feature3, feature4], [pred_vp, vp_gt_used]
+        return [result1, result2, result3, result4], [feature1, feature2, feature3, feature4], [pred_vp, vp_gt_used, vp_batch_idx]
         #return [result2], [feature2]

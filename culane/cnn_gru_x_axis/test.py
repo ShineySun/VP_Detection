@@ -104,7 +104,7 @@ def Testing():
         norm_dist = []
         print("evaluate")
         evaluation_test(test_loss, norm_dist, loader, lane_agent)
-        print(test_loss[0]/test_loss[2], test_loss[0]/test_loss[1])
+        print(test_loss[0]/test_loss[2], test_loss[1]/test_loss[2])
         save_norm_dist(norm_dist)
         
 
@@ -151,7 +151,7 @@ def evaluation_test(test_loss, norm_dist, loader, lane_agent, thresh = p.thresho
         #print(target_lanes)
         #util.visualize_points_origin_size(target_lanes[0], target_h[0], test_image[0]*255, ratio_w, ratio_h)
         # cv2.imwrite('./output_img/result_.png', out_images[0])
-        if count % 5000 == 0 and out_images != []:
+        if count % 500 == 0 and out_images != []:
             cv2.imwrite('./output_img/result_'+str(count)+'.png', out_images[0])
 
         result_data = write_result(x_, y_, path)
@@ -363,11 +363,16 @@ def test(test_loss, norm_dist, vp_gt, lane_agent, test_images, thresh = p.thresh
     if vp_info[0] is not None:
         vp_pred = vp_info[0].cpu().detach().numpy()
         vp_gt_used = vp_info[1].cpu().detach()
+        
+        # print(np.sum(np.abs(vp_pred[:, 1]-np.array(vp_gt_used)[:, 1])) / len(vp_gt_used))
 
         x_pred = vp_pred[:, 0]*p.x_size
         x_gt = np.array(vp_gt_used)[:, 0]*p.x_size
         y_pred = vp_pred[:, 1]*p.y_size
         y_gt = np.array(vp_gt_used)[:, 1]*p.y_size
+
+        # print(np.sum(np.abs(y_pred-y_gt)) / len(vp_gt_used))
+
         test_loss[0] += np.sum(np.abs(x_pred-x_gt))
         test_loss[1] += np.sum(np.abs(y_pred-y_gt))
         test_loss[2] += len(vp_gt_used)

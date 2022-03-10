@@ -10,8 +10,8 @@ class Parameters():
     n_epoch = 1000
     l_rate = 0.001
     weight_decay=1e-5
-    save_path = "savefile/rmse/"
-    model_path = "savefile/rmse/" # 수정해주기!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    save_path = "savefile/"
+    model_path = "savefile/" # 수정해주기!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     batch_size = 6
     x_size = 512
     y_size = 256

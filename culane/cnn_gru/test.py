@@ -47,8 +47,8 @@ def Testing():
         lane_agent = agent.Agent()
     else:
         lane_agent = agent.Agent()
-        lane_agent.load_weights(26, "tensor(1.0652)", "0.007536814548075199")
-        # lane_agent.load_weights(142, "tensor(0.8651)", "5.811200389871374e-05") 지금까지 best
+        # lane_agent.load_weights(26, "tensor(1.0652)", "0.007536814548075199")
+        lane_agent.load_weights(142, "tensor(0.8651)", "5.811200389871374e-05") #지금까지 best
 	
     ##############################
     ## Check GPU
@@ -104,7 +104,7 @@ def Testing():
         norm_dist = []
         print("evaluate")
         evaluation_test(test_loss, norm_dist, loader, lane_agent)
-        print(test_loss[0]/test_loss[2], test_loss[0]/test_loss[1])
+        print(test_loss[0]/test_loss[2], test_loss[1]/test_loss[2])
         save_norm_dist(norm_dist)
 
 
@@ -369,6 +369,8 @@ def test(test_loss, norm_dist, vp_gt, lane_agent, test_images, thresh = p.thresh
         test_loss[2] += len(vp_gt_used)
         norm_dist_tmp = np.sqrt((x_pred-x_gt)**2 + (y_pred-y_gt)**2) / p.img_diag
         norm_dist.extend(norm_dist_tmp.tolist())
+        print(x_pred)
+        print(y_pred)
         
 
     return out_x, out_y,  out_images

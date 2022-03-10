@@ -47,7 +47,7 @@ def Testing():
         lane_agent = agent.Agent()
     else:
         lane_agent = agent.Agent()
-        lane_agent.load_weights(70, "tensor(0.7224)", "0.0037707341834902763")
+        lane_agent.load_weights(107, "tensor(1.6058)", "6.658214260824025e-05")
 	
     ##############################
     ## Check GPU
@@ -103,7 +103,7 @@ def Testing():
         norm_dist = []
         print("evaluate")
         evaluation_test(test_loss, norm_dist, loader, lane_agent)
-        print(test_loss[0]/test_loss[2], test_loss[0]/test_loss[1])
+        print(test_loss[0]/test_loss[2], test_loss[1]/test_loss[2])
         save_norm_dist(norm_dist)
 
 

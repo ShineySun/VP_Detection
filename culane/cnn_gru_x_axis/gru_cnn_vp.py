@@ -62,16 +62,17 @@ class GRU_CNN(nn.Module):
         out_2 = out_2[:, -15:, :].reshape(out_2.shape[0], -1)
         out_3 = out_3[:, -15:, :].reshape(out_3.shape[0], -1)
         out_4 = out_4[:, -15:, :].reshape(out_4.shape[0], -1)
-        # out = out_1 + out_2 + out_3 + out_4
+        out = out_1 + out_2 + out_3 + out_4
 
         ## LEFT끼리, RIGHT끼리 각각 LINEAR 한번씩 거친후 더함
         # 복잡해 지는것에 비해 큰 이득이 있을까?? 의문...
         # 한번에 4개 다 더하는 것에 비해 left끼리, right끼리 먼저 묶어줘서 덜 헷갈릴 수 있다고 생각
-        out_left = out_1 + out_3
-        out_right = out_2 + out_4
-        out_left = self.linear_1(out_left)
-        out_right = self.linear_1(out_right)
-        out = out_left + out_right
+        # out_left = out_1 + out_3
+        # out_right = out_2 + out_4
+        # out_left = self.linear_1(out_left)
+        # out_right = self.linear_1(out_right)
+        # out = out_left + out_right
+        # 이거 성능 쓰레기... 위처럼 한번에 다 더해는게 지금까지중 가장 좋음
 
         ## CNN ##
         img_out = self.relu(self.bn1(self.conv_1(img)))

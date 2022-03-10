@@ -1,3 +1,4 @@
+from enum import unique
 from turtle import right
 import time
 from sklearn.utils import check_array
@@ -46,8 +47,8 @@ def bridge(result, vp_gt):
 
         left_pt_y_axis = spline_lane_y(left_pt)
         right_pt_y_axis = spline_lane_y(right_pt)
-        left_pt_x_axis = spline_lane_x(left_pt, 'left')
-        right_pt_x_axis = spline_lane_x(right_pt, 'right')
+        left_pt_x_axis = spline_lane_x(left_pt)
+        right_pt_x_axis = spline_lane_x(right_pt)
         
 
         if left_pt_y_axis is not None and right_pt_y_axis is not None and left_pt_x_axis is not None and right_pt_x_axis is not None:
@@ -102,19 +103,31 @@ def spline_lane_y(pt):
         return None
 
 
-def spline_lane_x(pt, ego):
+def spline_lane_x(pt):
+    ## y축 기준 큰 것들(vp에 가까운것들) 3분의 1만 사용할것
+    ## 이 중 y축이 가장 작은것과 가장 큰것의 x좌표를 비교해 왼쪽으로 꺾이는지 오른쪽으로 꺾이는지 판단
     if pt != None:
         xs = np.array(pt).T[0]
         ys = np.array(pt).T[1]
-        if ego == 'left': xs = -xs
 
+        s = ys.argsort()
+        xs = xs[s]
+        ys = ys[s]
+        ys, unique_idx = np.unique(ys, return_index=True)
+        xs = xs[unique_idx]
+        not_used = ys.shape[0]*2//3
+        xs = xs[not_used:]
+        ys = ys[not_used:]
+        way = ''
+        ## 왼쪽으로 굽음? 오른쪽으로 굽음?
+        if xs[0] < xs[-1]: #오른쪽으로 굽음
+            way = 'right'
+            xs = -xs
 
         s = xs.argsort()
         xs = xs[s]
         ys = ys[s]
-        xs, unique_idx = np.unique(xs, return_index=True)
-        ys = ys[unique_idx]
-        # interpolation scheme : Cubic Spline
+
         try:
             cs_intrp = interp1d(xs, ys)
             # cs_intrp2 = interp1d(xs, ys, kind='quadratic')
@@ -124,21 +137,17 @@ def spline_lane_x(pt, ego):
             # print('xs:', xs)
             # print('ys:', ys)
             return None
-        # x_intrp = np.linspace(int(xs.min()), int(xs.max()), int(xs.max())-int(xs.min())+1)
-        x_intrp = np.linspace(int(xs.max()), int(xs.min()), 40)
+
+        x_intrp = np.linspace(int(xs.max()), int(xs.min()), 15)
         y_intrp = cs_intrp(x_intrp)
 
-        if ego == 'left':
+        if way == 'right':
             x_intrp = -x_intrp
-        # 이부분 제대로 확인하기
-        # plt.scatter(x_intrp, y_intrp)
-        # plt.show()
-        # print(x_intrp)
-        # print(y_intrp)
 
         x_intrp /= p.x_size
         y_intrp /= p.y_size
         intrp_lane = np.array(list(zip(x_intrp, y_intrp)), dtype='float32')
+
         return intrp_lane
     else:
         # print("there is no lane")
